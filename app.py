@@ -40,13 +40,16 @@ init_db(DB_FASILITAS, ['Faskes', 'Kapasitas_Rawat_Inap', 'Terisi', 'Status_Penuh
 # ==========================================
 # 2. LOAD MODEL PENDETEKSI WAJAH (.pkl)
 # ==========================================
-"""
+
+
 @st.cache_resource
 def load_model():
-    with open('model_wajah.pkl', 'rb') as file:
+    # Pastikan nama file di bawah ini sama persis dengan yang ada di GitHub Anda
+    with open('best_face_recognition_model.pkl', 'rb') as file:
         return pickle.load(file)
+
 face_model = load_model()
-"""
+
 def ekstrak_fitur_wajah(image_buffer):
     return str(np.random.rand(128).tolist()) 
 
@@ -155,12 +158,18 @@ with tab_pasien:
                         else:
                             st.error("Rujukan tidak ditemukan.")
                             lanjut_antri = False
-
                     if lanjut_antri:
                         df_antrian = pd.read_excel(DB_ANTRIAN)
-                        antrian_sebelumnya = len(df_antrian[(df_antrian['Faskes'] == faskes_pilih) & (df_antrian['Poli'] == layanan_pilih) & (df_antrian['Status_Periksa'] == 'Belum')])
-                        
-                        no_antrian = len(df_antrian) + 1
+    
+                        # PERBAIKAN 1: Ambil data antrian khusus untuk Faskes yang dipilih saja
+                        df_faskes_ini = df_antrian[df_antrian['Faskes'] == faskes_pilih]
+    
+                        # PERBAIKAN 2: Nomor antrian dihitung hanya dari total pasien di Faskes tersebut
+                        no_antrian = len(df_faskes_ini) + 1
+    
+                        # PERBAIKAN 3: Hitung jumlah orang yang belum diperiksa di Poli yang sama
+                        antrian_sebelumnya = len(df_faskes_ini[(df_faskes_ini['Poli'] == layanan_pilih) & (df_faskes_ini['Status_Periksa'] == 'Belum')])
+    
                         estimasi_menit = antrian_sebelumnya * 15
                         
                         new_data = pd.DataFrame({
@@ -349,9 +358,14 @@ with tab_dokter:
                 st.caption("Ini adalah kunjungan pertama pasien (Tidak ada riwayat).")
             else:
                 st.dataframe(riwayat[['Tanggal', 'Faskes', 'Diagnosis', 'Resep_Obat']], use_container_width=True, hide_index=True)
-            
+
             st.markdown("### Pemeriksaan Saat Ini")
-            st.warning(f"**Keluhan:** {keluhan_bersih} | **Tipe:** {data_pilih['Jenis']} {data_pilih['Status_Rujukan']}")
+            
+            # Bersihkan nilai 'nan' pada status rujukan
+            ruj_mentah = data_pilih['Status_Rujukan']
+            ruj_bersih = "" if pd.isna(ruj_mentah) or str(ruj_mentah).lower() == 'nan' or str(ruj_mentah) == "" else f" {ruj_mentah}"
+            
+            st.warning(f"**Keluhan:** {keluhan_bersih} | **Tipe:** {data_pilih['Jenis']}{ruj_bersih}")
             
             with st.form("form_pemeriksaan"):
                 diagnosis = st.text_area("1. Catatan Rekam Medis / Diagnosis (Wajib)")
