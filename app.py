@@ -42,13 +42,13 @@ init_db(DB_FASILITAS, ['Faskes', 'Kapasitas_Rawat_Inap', 'Terisi', 'Status_Penuh
 # ==========================================
 
 
-@st.cache_resource
-def load_model():
+#@st.cache_resource
+#def load_model():
     # Pastikan nama file di bawah ini sama persis dengan yang ada di GitHub Anda
-    with open('best_face_recognition_model.pkl', 'rb') as file:
-        return pickle.load(file)
+ #   with open('best_face_recognition_model.pkl', 'rb') as file:
+  #      return pickle.load(file)
 
-face_model = load_model()
+#face_model = load_model()
 
 def ekstrak_fitur_wajah(image_buffer):
     return str(np.random.rand(128).tolist()) 
